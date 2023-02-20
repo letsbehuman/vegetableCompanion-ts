@@ -1,6 +1,6 @@
-import { config } from './config';
-import { VegetableCompanionServer } from './setupServer';
-import databaseConnection from './setupDatabase';
+import { config } from '@root/config';
+import { VegetableCompanionServer } from '@root/setupServer';
+import databaseConnection from '@root/setupDatabase';
 import express, { Express } from 'express';
 
 //this Application is not the same from setupServer
