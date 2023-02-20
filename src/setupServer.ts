@@ -4,18 +4,19 @@ import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import compression from 'compression';
+import cookieSession from 'cookie-session';
 import HTTP_STATUS from 'http-status-codes';
-import 'express-async-errors';
 import Logger from 'bunyan';
-import { config } from '@root/config';
-import applicationRoutes from '@root/routes';
-import { CustomError, IErrorResponse } from '@global/helpers/error-handler';
+import 'express-async-errors';
+import { config } from './config';
+import applicationRoutes from './routes';
+import { CustomError, IErrorResponse } from '@global/helpers/error.handler';
 
 const SERVER_PORT = 5000;
-const log: Logger = config.createLogger('server'); //"server" will indentify where the log is coming from
+const log: Logger = config.createLogger('setupServer'); //"server" will indentify where the log is coming from
 
 export class VegetableCompanionServer {
-  private app: Application;
+  private app: Application; // instanse of express app
 
   constructor(app: Application) {
     this.app = app;
@@ -32,26 +33,27 @@ export class VegetableCompanionServer {
     app.use(
       cookieSession({
         name: 'session',
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         keys: [config.SECRET_KEY_ONE!, config.SECRET_KEY_TWO!],
         maxAge: 24 * 7 * 3600000,
         secure: config.NODE_ENV !== 'development'
       })
     );
-    app.use(hpp());
-    app.use(helmet());
+    app.use(hpp()); //Express middleware to protect against HTTP Parameter Pollution attacks
+    app.use(helmet()); //Helmet helps you secure your Express apps by setting various HTTP header
     app.use(
       cors({
-        origin: config.CLIENT_URL,
-        credentials: true,
-        optionsSuccessStatus: 200,
+        origin: config.CLIENT_URL, //final url
+        credentials: true, // allows to use the cookies
+        optionsSuccessStatus: 200, //for older browers
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
       })
-    );
+    ); //a mechanism that allows restricted resources on a web page to be requested from another domain outside the domain from which the first resource was served
   }
   private standardMiddelware(app: Application): void {
     app.use(compression()); //compress the request and response
-    app.use(json({ limit: '50mb' }));
-    app.use(urlencoded({ extended: true, limit: '50mb' }));
+    app.use(json({ limit: '50mb' })); // allows you send JSON data back and forth client-server
+    app.use(urlencoded({ extended: true, limit: '50mb' })); // allows to use encoded data client-server
   }
   private routerMiddelware(app: Application): void {
     applicationRoutes(app);
@@ -68,19 +70,17 @@ export class VegetableCompanionServer {
       next();
     });
   }
+
   private async startServer(app: Application): Promise<void> {
     try {
       const httpServer: http.Server = new http.Server(app);
-      const socketIO: Server = await this.createSocketIO(httpServer);
       this.startHttpServer(httpServer);
-      this.socketIOConnections(socketIO);
     } catch (error) {
       log.error(error);
     }
   }
-
   private startHttpServer(httpServer: http.Server): void {
-    log.info(`server has started with proccess ${process.pid}`);
+    log.info(`Server has started with proccess ${process.pid}`);
     httpServer.listen(SERVER_PORT, () => {
       log.info(`Server running on port ${SERVER_PORT}`);
     });
