@@ -28,7 +28,7 @@
       "@user/*": ["src/features/user/*"],
       "@globals/*": ["src/shared/globals/*"],
       "@services/*": ["src/shared/services/*"],
-      "@workers/*": ["src/shared/workers/*"],
+      "@workers/*": ["src/shared/globals/workers/*"],
       //the last paths for root otherwise will ignore other paths
       "@root/*": ["src/*"]
     }

@@ -9,7 +9,24 @@ Accept: application/json
 withCredentials: true
 
 {
-  "username":"mario",
-  "email":"mario@gmail.com",
+  "username":"ziska",
+  "email":"ziska@gmail.com",
   "password":"12345"
 }
+
+####
+POST {{baseUrl}}/{{urlPath}}/signin
+Content-Type: application/json
+Accept: application/json
+withCredentials: true
+
+{
+    "username":"Ziska",
+    "password":"12345"
+}
+
+####
+GET {{baseUrl}}/{{urlPath}}/signout
+Content-Type: application/json
+Accept: application/json
+withCredentials: true

@@ -11,6 +11,9 @@ import 'express-async-errors';
 import { config } from '@root/config';
 import applicationRoutes from '@root/routes';
 import { CustomError, IErrorResponse } from '@globals/helpers/error.handler';
+import { Server } from 'socket.io';
+import { createClient } from 'redis';
+import { createAdapter } from '@socket.io/redis-adapter';
 
 const SERVER_PORT = 5000;
 const log: Logger = config.createLogger('setupServer'); //"server" will indentify where the log is coming from
@@ -74,10 +77,26 @@ export class VegetableCompanionServer {
   private async startServer(app: Application): Promise<void> {
     try {
       const httpServer: http.Server = new http.Server(app);
+      const socketIO: Server = await this.createSocketIO(httpServer);
+      this.socketIOConnections(socketIO);
       this.startHttpServer(httpServer);
     } catch (error) {
       log.error(error);
     }
+  }
+
+  private async createSocketIO(httpServer: http.Server): Promise<Server> {
+    const io: Server = new Server(httpServer, {
+      cors: {
+        origin: config.CLIENT_URL,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+      }
+    });
+    const pubClient = createClient({ url: config.REDIS_HOST });
+    const subClient = pubClient.duplicate();
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    io.adapter(createAdapter(pubClient, subClient));
+    return io;
   }
   private startHttpServer(httpServer: http.Server): void {
     log.info(`Server has started with proccess ${process.pid}`);
@@ -85,4 +104,5 @@ export class VegetableCompanionServer {
       log.info(`Server running on port ${SERVER_PORT}`);
     });
   }
+  private socketIOConnections(io: Server): void {}
 }
